@@ -1,0 +1,89 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Utilisateur {
+  id               String    @id @default(uuid())
+  nom              String
+  email            String    @unique
+  motDePasseHash   String
+  role             String    @default("user")
+  creeLe           DateTime  @default(now())
+
+  comptes          Compte[]
+  budgets          Budget[]
+  alertes          Alerte[]
+}
+
+model Compte {
+  id              String    @id @default(uuid())
+  utilisateurId   String
+  nom             String
+  type            String
+  soldeInitial    Float   @default(0)
+  soldeActuel     Float   @default(0)
+  devise          String    @default("MRU")
+  actif           Boolean   @default(true)
+  creeLe          DateTime  @default(now())
+
+  utilisateur     Utilisateur   @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  transactions    Transaction[]
+}
+
+model Categorie {
+  id          String    @id @default(uuid())
+  nom         String
+  type        String
+  couleur     String?
+  estSysteme  Boolean   @default(false)
+
+  transactions Transaction[]
+  budgets      Budget[]
+}
+
+model Transaction {
+  id               String    @id @default(uuid())
+  compteId         String
+  categorieId      String?
+  montant          Float
+  type             String
+  sourcePaiement   String
+  description      String?
+  dateTransaction  DateTime
+  creeLe           DateTime  @default(now())
+
+  compte           Compte     @relation(fields: [compteId], references: [id], onDelete: Cascade)
+  categorie        Categorie? @relation(fields: [categorieId], references: [id])
+}
+
+model Budget {
+  id              String    @id @default(uuid())
+  utilisateurId   String
+  categorieId     String
+  montantLimite   Float
+  montantDepense  Float   @default(0)
+  dateDebut       DateTime
+  dateFin         DateTime
+
+  utilisateur     Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  categorie       Categorie   @relation(fields: [categorieId], references: [id])
+  alertes         Alerte[]
+}
+
+model Alerte {
+  id              String    @id @default(uuid())
+  utilisateurId   String
+  budgetId        String
+  type            String
+  message         String
+  lue             Boolean   @default(false)
+  creeLe          DateTime  @default(now())
+
+  utilisateur     Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  budget          Budget      @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+}
